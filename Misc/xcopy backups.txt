@@ -1,0 +1,105 @@
+XCOPY.CMD
+Rem XCopy C: Britt ETC Folders for Backup
+Rem *************************************
+
+Rem If Set V_d=/d is ON, Older Files will be Replaced
+Set V_d=/d
+
+If "%V_d%" NEQ "/d" goto :Deleting
+@Echo Replacing Changed Files
+
+:Deleting
+Set V_File_Name_1=XCopy
+Set V_File_Name_2=Backup
+Set V_File_Name_3=Current
+
+Date /t
+Time /t
+Echo Off
+
+Set V_Dir=Britt
+CALL C:\Britt\XCopy\"Xcopy Called"
+
+Set V_Dir=Britt Michael
+CALL C:\Britt\XCopy\"Xcopy Called"
+
+Set V_Dir=Britt Movies
+CALL C:\Britt\XCopy\"Xcopy Called"
+
+Set V_Dir=Britt Pictures
+CALL C:\Britt\XCopy\"Xcopy Called"
+
+Set V_Dir=Users
+CALL C:\Britt\XCopy\"Xcopy Called"
+
+@Echo Done
+Time/t
+Pause
+--------------------------------------------------------------------------------------------------------------
+XCOPY Called.cmd
+Rem Called Batch File to XCopy C: Folders for Backup
+Rem ************************************************
+
+XCOPY C:\"%V_Dir%" H:\"%V_File_Name_1% %V_File_Name_2% %V_File_Name_3%"\"%V_Dir%" /s /e /c /i /q %V_d% /Exclude:C:\Britt\Xcopy\XcopyExclude1.txt <C:\Britt\Xcopy\XcopyAnswerY.txt
+
+IF ERRORLEVEL = 5 GOTO WriteFailed:
+IF ERRORLEVEL = 4 GOTO InitFailed:
+IF ERRORLEVEL = 2 GOTO Terminated:
+IF ERRORLEVEL = 1 GOTO NoFiles:
+
+If "%V_d%" Equ "/d" goto :NoDel
+@Echo Deleting Old "%V_Dir%" Files
+
+Del \\MICHAEL\Users\Owner\SkyDrive\"%V_Dir%"\* /s /q >C:\Britt\Xcopy\XcopyList.txt
+RD \\MICHAEL\Users\Owner\SkyDrive\"%V_Dir%" /s /q >C:\Britt\Xcopy\XcopyList.txt
+
+:NoDel
+XCOPY H:\"%V_File_Name_1% %V_File_Name_2% %V_File_Name_3%"\"%V_Dir%" \\MICHAEL\Users\Owner\SkyDrive\"%V_Dir%" /s /e /c /i /q %V_d% /Exclude:C:\Britt\Xcopy\XcopyExclude2.txt <C:\Britt\Xcopy\XcopyAnswerA.txt
+
+IF ERRORLEVEL = 5 GOTO WriteFailed:
+IF ERRORLEVEL = 4 GOTO InitFailed:
+IF ERRORLEVEL = 2 GOTO Terminated:
+IF ERRORLEVEL = 1 GOTO NoFiles:
+IF ERRORLEVEL = 0 GOTO allok:
+
+:WriteFailed
+@Echo Write Failed!
+GOTO Pause:
+
+:InitFailed
+@Echo Init Failed!
+GOTO Pause:
+
+:Terminated
+@Echo Terminated!
+GOTO Pause:
+
+:NoFiles
+@Echo No Files To Copy!
+GOTO Pause:
+
+:Pause
+pause
+
+:allok
+@Echo "%V_Dir%" OK
+
+----------------------------------------------------------------------------------------------------------
+XcopyAnswerA.txt
+A
+-------------------------------------------------------------------------------------------------------
+XcopyAnswerY.txt
+Y
+Y (about 30 lines long, each only containing a Y)
+-----------------------------------------------------------------------------------------------------------
+XcopyExclude1.txt
+SkyDrive
+Default.migrated
+Desktop
+UpdatusUser
+CSC
+---------------------------------------------------------------------------------------------------------------------
+XcopyExclude2.txt
+Default.migrated
+Desktop
+-----------------------------------------------------------------------------------------------------------

@@ -1,0 +1,55 @@
+.\script dir1, e:\dir2, dir3 if:\backup
+
+< script.ps1 >
+param ([array]$source, $destination)
+if (!$source -or !$destination) {throw 'Missing argument'}
+if (!(test-path $destination -is)) {
+throw "$destination << is not a valid path"
+}
+
+function Compare-Hash ($f1, $f2) {
+$sha1 = [System.Security.Cryptography.SHA1]::create()
+$stream1 = new-object IO.StreamReader $f1
+$h1 = $sha1.computeHash($stream1.baseStream)
+$stream1.close()
+$stream2 = new-object IO.StreamReader $f2
+$h2 = $sha1.computeHash($stream2.baseStream)
+$stream2.close()
+"$h1" -eq "$h2"
+}
+
+foreach ($src in $source) {
+$srcDir = $(if (!(test-path $src)) {
+throw "Verify ${src}'s path."} else {
+(rvpa $src).path})
+
+$dst = $destination + ($srcDir -replace '^.+(\\.+)$','$1')
+$dstDir = $(if (!(test-path $dst)) {
+(ni $dst -i d*).fullName} else {
+(rvpa $dst).path})
+
+$escSrcDir = [regex]::escape($srcDir)
+
+$srcSub = ls $srcDir -r | ? {$_.psIsContainer} | % {$_.fullName} | sort
+if ($srcSub) {
+$srcSub -replace $escSrcDir, $dstDir |
+% {if (!(test-path $_)) {[void](ni $_ -i d*)}}
+}
+
+$testSrc = ls $srcDir -r | ? {!$_.psIsContainer} |
+% {$_.fullName -replace $escSrcDir} | sort
+
+$testDst = ls $dstDir -r | ? {!$_.psIsContainer} |
+% {$_.fullName -replace [regex]::escape($dstDir)} | sort
+
+$testSrc | ? {$testDst -notContains $_} |
+cpi -pat {$srcDir + $_} -des {$dstDir + $_}
+
+$testDst | ? {$testSrc -contains $_ -and
+!(compare-hash ($srcDir + $_) ($dstDir + $_))} |
+cpi -pat {$srcDir + $_} -des {$dstDir + $_}
+}
+< end >
+
+-- 
+Kiron
